@@ -97,19 +97,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform fmt
+        context: ${{ env.WORKDIR }}
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
 
       - name: Terraform Init
+        context: ${{ env.WORKDIR }}
         id: init
         run: terraform init
 
       - name: Terraform Validate
+        context: ${{ env.WORKDIR }}
         id: validate
         run: terraform validate -no-color
 
       - name: Terraform Plan
+        context: ${{ env.WORKDIR }}
         id: plan
         run: terraform plan -no-color
         continue-on-error: false

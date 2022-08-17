@@ -168,8 +168,8 @@ resource "aws_ecs_task_definition" "XapoECS_Task" {
               "sourceVolume": "bitcoin-data-storage"
           }
       ],
-      "name": "${var.image}",
-      "image": "${var.image}"
+      "name": "${var.DockerImage}",
+      "image": "${var.DockerImage}"
   }
 ]
 DEFINITION
@@ -187,8 +187,8 @@ DEFINITION
 # ---------------------------------------------------------------------------------------------------------------------
 #  Docker Image to be deployed
 # ---------------------------------------------------------------------------------------------------------------------
-variable "image" {
-  description = "Image that will be used in Task Definition"
+variable "DockerImage" {
+  description = "Image that will be used in Task Definition. Format: owner/image:version"
   type        = string
-  default     = "eduardoamendola/bitcoin:0.21.0"
+//  default     = "eduardoamendola/bitcoin:0.21.0"
 }

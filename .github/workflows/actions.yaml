@@ -7,21 +7,21 @@ on:
   # run it during pull request
   pull_request:
 
+env:
+  IMAGE_NAME: bitcoin
+  IMAGE_VERSION: 0.21.0
+
 jobs:
   # define job to build and publish docker image
-  build-and-push-docker-image:
-    name: Build Docker image and push to repositories
-    # run only when code is compiling and tests are passing
+  build-test-and-push-docker-image:
+    name: Build Docker image, test security with Grype, and push it to DockerHub
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: bitcoin
-      IMAGE_VERSION: 0.21.0
-    # steps to perform in job
+      WORKDIR: ./docker
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # setup Docker buld action
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -32,30 +32,17 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to Github Packages
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-# WORKS BEAUTIFULY
-#      - name: Build image and push to Docker Hub and GitHub Container Registry
-#        uses: docker/build-push-action@v2
-#        with:
-#          # relative path to the place where source code with Dockerfile is located
-#          context: ./docker
-#          # Note: tags has to be all lower-case
-#          tags: |
-#            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
-#          # build on feature branches, push only on main branch
-#          push: ${{ github.ref == 'refs/heads/main' }}
+      #      - name: Login to Github Packages
+      #        uses: docker/login-action@v1
+      #        with:
+      #          registry: ghcr.io
+      #          username: ${{ github.actor }}
+      #          password: ${{ secrets.GHCR_PAT }}
 
       - name: Build local container
         uses: docker/build-push-action@v2
         with:
-          context: ./docker
-#          tags: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+          context: ${{ env.WORKDIR }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
           push: false
           load: true
@@ -63,116 +50,75 @@ jobs:
       - name: Scan image
         uses: anchore/scan-action@v3
         with:
-#          image: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
           image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
           fail-build: true
           severity-cutoff: medium
 
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
       - name: Docker Push
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
-#        run: docker push localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
 
-#
-#      - name: Image digest
-#        run: echo ${{ steps.docker_build.outputs.digest }}
+      #       WORKS BEAUTIFULY
+      #      - name: Build image and push to Docker Hub and GitHub Container Registry
+      #        uses: docker/build-push-action@v2
+      #        with:
+      #          # relative path to the place where source code with Dockerfile is located
+      #          context: ./docker
+      #          # Note: tags has to be all lower-case
+      #          tags: |
+      #            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+      #          # build on feature branches, push only on main branch
+      #          push: ${{ github.ref == 'refs/heads/main' }}
 
-#      - name: Build the container image
-#        uses: actions/checkout@v2
-##        run: docker build . --file Dockerfile --tag localbuild/testimage:latest
-#        run: docker build -f Dockerfile --tag localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }} .
+  plan-test-and-apply-terraform:
+    name: Terraform plan, test and apply
+    runs-on: ubuntu-latest
+    env:
+      WORKDIR: ./terraform
+      TF_VERSION: 1.0.0
+      AWS_REGION: ap-southeast-2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-#        grype eduardoamendola/$IMAGE_NAME:$IMAGE_VERSION --fail-on medium
-#        docker run -it eduardoamendola/$IMAGE_NAME:$IMAGE_VERSION
+      - name: Terraform Setup
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
-#      - uses: anchore/scan-action@v3
-#        with:
-#          image: "localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}"
-#          fail-build: true
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-#  terraform:
-#    name: Simple CICD for Xapo
-#    runs-on: ubuntu-latest
-#    env:
-#      working-directory: terraform
-#      TF_WORKSPACE: my-workspace
-#    steps:
-#      - name: Configure AWS credentials
-#        uses: aws-actions/configure-aws-credentials@v1
-#        with:
-#          aws-region: ap-southeast-2
-#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#
-#      - name: Checkout Repo
-#        uses: actions/checkout@v2
-#
-##    - uses: hashicorp/setup-terraform@v1
-##      with:
-##        terraform_version: 1.0.0
-##
-##    - name: Terraform Fmt
-##      id: fmt
-##      run: terraform fmt -check
-##      continue-on-error: true
-##
-###    - name: Terraform Init
-###      uses: hashicorp/terraform-github-actions/init@v0.4.0
-###      env:
-###        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-###        TF_ACTION_WORKING_DIR: 'terraform'
-###        AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-###        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-##
-##    - name: Terraform init
-##      id: init
-##      run: terraform init
-##      working-directory: ${{ env.working-directory }}
-###      env:
-###        TF_CLI_ARGS_init: "-backend-config=role_arn=arn:aws:iam::99999999:role/my-github-actions-role -upgrade -reconfigure"
-###        TF_VAR_assume_role: "my-github-actions-role"
-##
-##    - name: Terraform validate
-##      id: validate
-##      run: terraform validate
-##
-###    - name: Terraform Validate
-###      uses: hashicorp/terraform-github-actions/validate@v0.3.7
-##
-##    - name: Terraform plan
-##      id: plan
-##      run: terraform plan -no-color
-##      working-directory: ${{ env.working-directory }}
-##      env:
-##        TF_VAR_assume_role: "my-github-actions-role"
-##
-##    - name: Plan output
-##      id: output
-##      uses: actions/github-script@v3
-##      if: github.event_name == 'pull_request'
-##      env:
-##        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-##      with:
-##        github-token: ${{ secrets.GITHUB_TOKEN }}
-##        script: |
-##          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-##          ### Workspace
-##          \`${process.env.TF_WORKSPACE}\`
-##          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-##          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-##          <details><summary>Show Plan</summary>
-##          \`\`\`hcl
-##          ${process.env.PLAN}
-##          \`\`\`
-##          </details>
-##          **Pusher**: @${{ github.actor }}
-##          **Action**: ${{ github.event_name }}
-##          `;
-##          github.issues.createComment({
-##            issue_number: context.issue.number,
-##            owner: context.repo.owner,
-##            repo: context.repo.repo,
-##            body: output
-##          })
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: false
+        working-directory: ${{ env.WORKDIR }}
+#        env:
+#          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
 ##
 ###    - name: Terraform Apply
 ###      uses: hashicorp/terraform-github-actions/apply@v0.4.0

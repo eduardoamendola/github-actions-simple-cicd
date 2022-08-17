@@ -66,6 +66,9 @@ jobs:
           fail-build: true
           severity-cutoff: medium
 
+      - name: Docker Push
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+
 #
 #      - name: Image digest
 #        run: echo ${{ steps.docker_build.outputs.digest }}

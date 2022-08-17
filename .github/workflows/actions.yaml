@@ -67,7 +67,8 @@ jobs:
           severity-cutoff: medium
 
       - name: Docker Push
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+#        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+        run: docker push localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
 
 #
 #      - name: Image digest

@@ -4,7 +4,7 @@
 # -- Terraform Provider
 terraform {
   required_version = "1.0.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -36,9 +36,9 @@ resource "aws_vpc" "XapoVPC" {
 
 # -- Subnet
 resource "aws_subnet" "XapoSubnet" {
-  vpc_id = aws_vpc.XapoVPC.id
+  vpc_id            = aws_vpc.XapoVPC.id
   availability_zone = data.aws_region.current.name
-  cidr_block = "192.168.0.0/25"
+  cidr_block        = "192.168.0.0/25"
 
   tags = {
     Name = "XapoSubnet"
@@ -51,10 +51,10 @@ resource "aws_subnet" "XapoSubnet" {
 
 # -- EFS Security Group
 resource "aws_security_group" "XapoEFS_SG" {
-  name = "XapoEFS_SG"
+  name        = "XapoEFS_SG"
   description = "XapoEFS Security Group"
 
-  vpc_id = aws_vpc.XapoVPC.id
+  vpc_id                 = aws_vpc.XapoVPC.id
   revoke_rules_on_delete = false
 
   tags = {
@@ -69,10 +69,10 @@ resource "aws_security_group_rule" "XapoEFS_outbound_SG" {
     aws_vpc.XapoVPC.cidr_block
   ]
 
-  type = "egress"
-  protocol = "tcp"
+  type      = "egress"
+  protocol  = "tcp"
   from_port = 2049
-  to_port = 2049
+  to_port   = 2049
 }
 
 # -- EFS Inbound Security Group Rule
@@ -82,10 +82,10 @@ resource "aws_security_group_rule" "XapoEFS_inbound_SG" {
     aws_vpc.XapoVPC.cidr_block
   ]
 
-  type = "ingress"
-  protocol = "tcp"
+  type      = "ingress"
+  protocol  = "tcp"
   from_port = 2049
-  to_port = 2049
+  to_port   = 2049
 }
 
 # -- EFS
@@ -98,7 +98,7 @@ resource "aws_efs_file_system" "XapoEFS" {
 # -- EFS Mount Target
 resource "aws_efs_mount_target" "XapoEFS_Target" {
   file_system_id = aws_efs_file_system.XapoEFS.id
-  subnet_id = aws_subnet.XapoSubnet.id
+  subnet_id      = aws_subnet.XapoSubnet.id
   security_groups = [
     aws_security_group.XapoEFS_SG.id
   ]
@@ -113,15 +113,15 @@ resource "aws_ecs_cluster" "XapoECS_Cluster" {
 }
 
 resource "aws_ecs_service" "XapoECS_Service" {
-  name = "xapo-ecs-service"
-  cluster = aws_ecs_cluster.XapoECS_Cluster.id
+  name            = "xapo-ecs-service"
+  cluster         = aws_ecs_cluster.XapoECS_Cluster.id
   task_definition = aws_ecs_task_definition.XapoECS_Task.arn
-  desired_count = 2
-  launch_type = "EC2"
+  desired_count   = 2
+  launch_type     = "EC2"
 
   network_configuration {
     subnets = [
-      aws_subnet.XapoSubnet.id]
+    aws_subnet.XapoSubnet.id]
   }
 }
 
@@ -187,8 +187,8 @@ DEFINITION
 # ---------------------------------------------------------------------------------------------------------------------
 #  Docker Image to be deployed
 # ---------------------------------------------------------------------------------------------------------------------
-variable "image"  {
+variable "image" {
   description = "Image that will be used in Task Definition"
   type        = string
-  default = "eduardoamendola/bitcoin:0.21.0"
+  default     = "eduardoamendola/bitcoin:0.21.0"
 }

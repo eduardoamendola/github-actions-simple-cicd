@@ -16,9 +16,8 @@ jobs:
     env:
       #    #      working-directory: terraform
       #    #      TF_WORKSPACE: my-workspace
-      IMAGE_NAME:bitcoin
-      IMAGE_VERSION:0.21.0
-
+      IMAGE_NAME: bitcoin
+      IMAGE_VERSION: 0.21.0
     # steps to perform in job
     steps:
       - name: Checkout code

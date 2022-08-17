@@ -55,20 +55,22 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./docker
-          tags: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+#          tags: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
           push: false
           load: true
 
       - name: Scan image
         uses: anchore/scan-action@v3
         with:
-          image: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+#          image: localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
           fail-build: true
           severity-cutoff: medium
 
       - name: Docker Push
-#        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
-        run: docker push localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+#        run: docker push localbuild/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
 
 #
 #      - name: Image digest

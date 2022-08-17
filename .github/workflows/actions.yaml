@@ -75,12 +75,13 @@ jobs:
   plan-test-and-apply-terraform:
     name: Terraform plan, test and apply
     runs-on: ubuntu-latest
-    run:
-      working-directory: ${{ env.WORKDIR }}
     env:
       WORKDIR: ./terraform
       TF_VERSION: 1.0.0
       AWS_REGION: ap-southeast-2
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

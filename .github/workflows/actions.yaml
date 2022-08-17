@@ -74,6 +74,7 @@ jobs:
 
   plan-test-and-apply-terraform:
     name: Terraform plan, test and apply
+    runs-on: ubuntu-latest
     run:
       working-directory: ${{ env.WORKDIR }}
     env:

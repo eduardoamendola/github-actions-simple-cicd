@@ -190,5 +190,4 @@ DEFINITION
 variable "DockerImage" {
   description = "Image that will be used in Task Definition. Format: owner/image:version"
   type        = string
-//  default     = "eduardoamendola/bitcoin:0.21.0"
 }

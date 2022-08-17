@@ -10,7 +10,6 @@ env:
   IMAGE_VERSION: 0.21.0
 
 jobs:
-  # define job to build and publish docker image
   build-test-and-push-docker-image:
     name: Build Docker image, test security with Grype, and push it to DockerHub
     runs-on: ubuntu-latest
@@ -96,7 +95,7 @@ jobs:
         id: plan
         run: terraform plan -no-color -var="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}"
         continue-on-error: false
-        working-directory: ${{ env.WORKDIR }}
+#        working-directory: ${{ env.WORKDIR }}
 ##
 ##    - name: Terraform apply
 ##      id: apply
